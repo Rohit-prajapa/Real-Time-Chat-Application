@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>ChatWave</title>
+
+  <link
+    rel="stylesheet"
+    href="/css/style.css"
+  >
+
+</head>
+
+<body>
+
+<div class="chat-app">
+
+  <!-- SIDEBAR -->
+
+  <aside class="sidebar">
+
+    <div>
+
+      <div class="sidebar-logo">
+        💬 ChatWave
+      </div>
+
+      <div class="profile">
+
+        <div class="avatar">
+
+          <%= user.username.charAt(0).toUpperCase() %>
+
+        </div>
+
+        <div>
+
+          <h3>
+            <%= user.username %>
+          </h3>
+
+          <span>
+            ● Online
+          </span>
+
+        </div>
+
+      </div>
+
+      <div class="rooms">
+
+        <h4>CHAT ROOMS</h4>
+
+        <a
+          href="/chat?room=general"
+          class="<%= room === 'general' ? 'active' : '' %>"
+        >
+          # General
+        </a>
+
+        <a
+          href="/chat?room=technology"
+          class="<%= room === 'technology' ? 'active' : '' %>"
+        >
+          # Technology
+        </a>
+
+        <a
+          href="/chat?room=college"
+          class="<%= room === 'college' ? 'active' : '' %>"
+        >
+          # College
+        </a>
+
+        <a
+          href="/chat?room=random"
+          class="<%= room === 'random' ? 'active' : '' %>"
+        >
+          # Random
+        </a>
+
+      </div>
+
+      <div class="online-section">
+
+        <h4>
+          ONLINE USERS
+        </h4>
+
+        <ul id="onlineUsers"></ul>
+
+      </div>
+
+    </div>
+
+    <a
+      href="/logout"
+      class="logout-btn"
+    >
+      Logout
+    </a>
+
+  </aside>
+
+
+  <!-- CHAT -->
+
+  <main class="chat-container">
+
+    <header class="chat-header">
+
+      <div>
+
+        <h2>
+          # <%= room %>
+        </h2>
+
+        <p>
+          Real-time conversation
+        </p>
+
+      </div>
+
+      <div class="connection-status">
+        ● Live
+      </div>
+
+    </header>
+
+
+    <div
+      class="messages"
+      id="messages"
+    >
+
+      <% messages.forEach(msg => { %>
+
+        <div
+          class="message <%= msg.username === user.username ? 'my-message' : '' %>"
+        >
+
+          <div class="message-avatar">
+
+            <%= msg.username.charAt(0).toUpperCase() %>
+
+          </div>
+
+          <div class="message-content">
+
+            <div class="message-info">
+
+              <strong>
+                <%= msg.username %>
+              </strong>
+
+              <span>
+
+                <%= new Date(msg.createdAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit"
+                }) %>
+
+              </span>
+
+            </div>
+
+            <p>
+              <%= msg.message %>
+            </p>
+
+          </div>
+
+        </div>
+
+      <% }) %>
+
+    </div>
+
+
+    <div
+      id="typingIndicator"
+      class="typing-indicator"
+    ></div>
+
+
+    <form
+      id="messageForm"
+      class="message-form"
+    >
+
+      <input
+        type="text"
+        id="messageInput"
+        placeholder="Message #<%= room %>"
+        autocomplete="off"
+      >
+
+      <button type="submit">
+        Send ➤
+      </button>
+
+    </form>
+
+  </main>
+
+</div>
+
+
+<script>
+
+  const CURRENT_USER =
+    <%- JSON.stringify(user.username) %>;
+
+  const CURRENT_ROOM =
+    <%- JSON.stringify(room) %>;
+
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script src="/js/chat.js"></script>
+
+</body>
+</html>
