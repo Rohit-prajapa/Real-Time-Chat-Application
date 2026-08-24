@@ -113,7 +113,7 @@ app.set("views", path.join(__dirname, "views"));
 // SESSION
 
 // ====================================
-
+console.log("SESSION_SECRET CHECK:", !!process.env.SESSION_SECRET);
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
