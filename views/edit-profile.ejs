@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -15,6 +16,7 @@
         rel="stylesheet"
         href="/css/style.css"
     >
+
 </head>
 
 <body class="profile-page">
@@ -38,7 +40,6 @@
 
         </div>
 
-
         <!-- EDIT PROFILE CARD -->
 
         <div class="profile-card edit-profile-card">
@@ -46,7 +47,12 @@
             <!-- AVATAR -->
 
             <div class="profile-avatar">
-                <%= user.username.charAt(0).toUpperCase() %>
+
+                <%= String(user?.username || "U")
+                    .charAt(0)
+                    .toUpperCase()
+                %>
+
             </div>
 
             <h2>
@@ -56,7 +62,6 @@
             <p class="edit-profile-subtitle">
                 Update your ChatWave account information
             </p>
-
 
             <!-- ERROR -->
 
@@ -68,7 +73,6 @@
 
             <% } %>
 
-
             <!-- SUCCESS -->
 
             <% if (typeof success !== "undefined" && success) { %>
@@ -78,7 +82,6 @@
                 </div>
 
             <% } %>
-
 
             <!-- FORM -->
 
@@ -100,7 +103,7 @@
                         type="text"
                         id="username"
                         name="username"
-                        value="<%= user.username %>"
+                        value="<%= user?.username || '' %>"
                         placeholder="Enter username"
                         minlength="3"
                         maxlength="30"
@@ -108,7 +111,6 @@
                     >
 
                 </div>
-
 
                 <!-- EMAIL -->
 
@@ -122,13 +124,12 @@
                         type="email"
                         id="email"
                         name="email"
-                        value="<%= user.email %>"
+                        value="<%= user?.email || '' %>"
                         placeholder="Enter email"
                         required
                     >
 
                 </div>
-
 
                 <!-- BIO -->
 
@@ -144,14 +145,13 @@
                         rows="4"
                         maxlength="160"
                         placeholder="Tell people something about yourself..."
-                    ><%= user.bio || "" %></textarea>
+                    ><%= user?.bio || "" %></textarea>
 
                     <small>
                         Maximum 160 characters
                     </small>
 
                 </div>
-
 
                 <!-- ACTIONS -->
 

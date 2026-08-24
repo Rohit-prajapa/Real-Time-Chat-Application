@@ -23,10 +23,10 @@
 
 <div
     class="chat-app"
-    data-current-user="<%= user.username %>"
+    data-current-user="<%= String(user?.username || '') %>"
     data-current-room="<%= room || '' %>"
     data-private-chat="<%= privateChat ? 'true' : 'false' %>"
-    data-target-user="<%= targetUser ? targetUser.username : '' %>"
+    data-target-user="<%= targetUser ? String(targetUser.username || '') : '' %>"
 >
 
     <!-- ================= SIDEBAR ================= -->
@@ -50,20 +50,22 @@
                 <div class="profile">
 
                     <div class="avatar">
-                        <%= user.username.charAt(0).toUpperCase() %>
+                        <%= String(user?.username || "U")
+                            .charAt(0)
+                            .toUpperCase() %>
                     </div>
 
                     <div>
 
                         <h3>
-                            <%= user.username %>
+                            <%= user?.username || "User" %>
                         </h3>
 
                         <span>
                             ● Online
                         </span>
 
-                        <% if (user.bio) { %>
+                        <% if (user?.bio) { %>
 
                             <small class="sidebar-profile-bio">
                                 <%= user.bio %>
@@ -82,7 +84,6 @@
                 </div>
 
             </a>
-
 
             <!-- USERS -->
 
@@ -112,7 +113,6 @@
                 </ul>
 
             </div>
-
 
             <!-- CHAT ROOMS -->
 
@@ -160,7 +160,6 @@
 
             </div>
 
-
             <!-- ONLINE USERS -->
 
             <div class="online-section">
@@ -175,7 +174,6 @@
 
         </div>
 
-
         <!-- LOGOUT -->
 
         <a
@@ -187,11 +185,9 @@
 
     </aside>
 
-
     <!-- ================= MAIN CHAT ================= -->
 
     <main class="chat-container">
-
 
         <!-- CHAT HEADER -->
 
@@ -202,7 +198,7 @@
                 <% if (privateChat) { %>
 
                     <h2>
-                        💬 <%= targetUser.username %>
+                        💬 <%= targetUser?.username || "User" %>
                     </h2>
 
                     <p id="targetUserStatus">
@@ -212,7 +208,7 @@
                 <% } else { %>
 
                     <h2>
-                        # <%= room %>
+                        # <%= room || "general" %>
                     </h2>
 
                     <p>
@@ -222,7 +218,6 @@
                 <% } %>
 
             </div>
-
 
             <!-- MESSAGE SEARCH -->
 
@@ -247,7 +242,6 @@
 
             </div>
 
-
             <!-- CONNECTION -->
 
             <div class="connection-status">
@@ -256,7 +250,6 @@
 
         </header>
 
-
         <!-- MESSAGES -->
 
         <div
@@ -264,14 +257,26 @@
             id="messages"
         >
 
-            <% messages.forEach(msg => { %>
+            <% (messages || []).forEach(msg => { %>
+
+                <%
+                    const msgUsername =
+                        String(msg?.username || "Unknown User");
+
+                    const msgText =
+                        String(msg?.message || "");
+
+                    const isMyMessage =
+                        msgUsername ===
+                        String(user?.username || "");
+                %>
 
                 <div
-                    class="message <%= msg.username === user.username
+                    class="message <%= isMyMessage
                         ? 'my-message'
                         : 'other-message' %>"
 
-                    data-message-date="<%= msg.createdAt %>"
+                    data-message-date="<%= msg.createdAt || '' %>"
                     data-message-id="<%= msg._id %>"
                 >
 
@@ -279,13 +284,11 @@
 
                     <div class="message-avatar">
 
-                        <%= msg.username
+                        <%= msgUsername
                             .charAt(0)
-                            .toUpperCase()
-                        %>
+                            .toUpperCase() %>
 
                     </div>
-
 
                     <!-- MESSAGE CONTENT -->
 
@@ -297,37 +300,35 @@
 
                             <div class="message-info">
 
-                                <% if (
-                                    msg.username !== user.username
-                                ) { %>
+                                <% if (!isMyMessage) { %>
 
                                     <strong>
-                                        <%= msg.username %>
+                                        <%= msgUsername %>
                                     </strong>
 
                                 <% } %>
 
-
                                 <span class="message-time">
 
-                                    <%= new Date(
-                                        msg.createdAt
-                                    ).toLocaleTimeString(
-                                        [],
-                                        {
-                                            hour: "2-digit",
-                                            minute: "2-digit"
-                                        }
-                                    ) %>
+                                    <%= msg.createdAt
+                                        ? new Date(
+                                            msg.createdAt
+                                        ).toLocaleTimeString(
+                                            [],
+                                            {
+                                                hour: "2-digit",
+                                                minute: "2-digit"
+                                            }
+                                        )
+                                        : "" %>
 
                                 </span>
-
 
                                 <!-- PRIVATE CHAT STATUS -->
 
                                 <% if (
                                     privateChat &&
-                                    msg.username === user.username
+                                    isMyMessage
                                 ) { %>
 
                                     <span
@@ -360,23 +361,19 @@
 
                             </div>
 
-
                             <!-- MESSAGE TEXT -->
 
                             <p
-                                data-original-text="<%= msg.message %>"
+                                data-original-text="<%= msgText %>"
                             >
-                                <%= msg.message %>
+                                <%= msgText %>
                             </p>
 
                         </div>
 
-
                         <!-- THREE DOT MENU -->
 
-                        <% if (
-                            msg.username === user.username
-                        ) { %>
+                        <% if (isMyMessage && !msg.deleted) { %>
 
                             <div class="message-menu-wrapper">
 
@@ -388,7 +385,6 @@
                                 >
                                     ⋮
                                 </button>
-
 
                                 <div
                                     class="message-menu"
@@ -405,7 +401,6 @@
                                         ↩️ Reply
                                     </button>
 
-
                                     <!-- COPY -->
 
                                     <button
@@ -416,7 +411,6 @@
                                         📋 Copy
                                     </button>
 
-
                                     <!-- EDIT -->
 
                                     <button
@@ -426,7 +420,6 @@
                                     >
                                         ✏️ Edit
                                     </button>
-
 
                                     <!-- DELETE -->
 
@@ -443,7 +436,6 @@
                             </div>
 
                         <% } %>
-
 
                         <!-- REACTIONS -->
 
@@ -511,7 +503,6 @@
 
                         </div>
 
-
                         <!-- REACTION RESULTS -->
 
                         <div
@@ -529,7 +520,7 @@
                                 %>
 
                                     <span class="reaction-result">
-                                        <%= reaction.emoji %>
+                                        <%= reaction.emoji || "" %>
                                     </span>
 
                                 <% }) %>
@@ -546,14 +537,12 @@
 
         </div>
 
-
         <!-- TYPING INDICATOR -->
 
         <div
             id="typingIndicator"
             class="typing-indicator"
         ></div>
-
 
         <!-- REPLY PREVIEW -->
 
@@ -583,7 +572,6 @@
 
         </div>
 
-
         <!-- MESSAGE FORM -->
 
         <form
@@ -596,11 +584,12 @@
                 id="messageInput"
 
                 placeholder="<%= privateChat
-                    ? 'Message ' + targetUser.username
-                    : 'Message #' + room
+                    ? 'Message ' + (targetUser?.username || 'User')
+                    : 'Message #' + (room || 'general')
                 %>"
 
                 autocomplete="off"
+                maxlength="5000"
             >
 
             <button type="submit">
@@ -613,16 +602,13 @@
 
 </div>
 
-
 <!-- SOCKET.IO -->
 
 <script src="/socket.io/socket.io.js"></script>
 
-
 <!-- CHAT JAVASCRIPT -->
 
 <script src="/js/chat.js"></script>
-
 
 </body>
 

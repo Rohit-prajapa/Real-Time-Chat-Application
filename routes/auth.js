@@ -1,353 +1,270 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-
 const User = require("../models/User");
 
 const router = express.Router();
-
 
 // ====================================
 // REGISTER PAGE
 // ====================================
 
-router.get(
-    "/register",
-    (req, res) => {
-
-        if (req.session.user) {
-            return res.redirect("/chat");
-        }
-
-        res.render(
-            "register",
-            {
-                error: null
-            }
-        );
-
+router.get("/register", (req, res) => {
+    if (req.session.user) {
+        return res.redirect("/chat");
     }
-);
 
+    return res.render("register", {
+        error: null
+    });
+});
 
 // ====================================
 // REGISTER USER
 // ====================================
 
-router.post(
-    "/register",
-    async (req, res) => {
+router.post("/register", async (req, res) => {
+    try {
+        const {
+            username,
+            email,
+            password,
+            confirmPassword
+        } = req.body;
 
-        try {
+        const cleanUsername =
+            String(username || "").trim();
 
-            const {
-                username,
-                email,
-                password,
-                confirmPassword
-            } = req.body;
+        const cleanEmail =
+            String(email || "")
+                .trim()
+                .toLowerCase();
 
-
-            if (
-                !username ||
-                !email ||
-                !password ||
-                !confirmPassword
-            ) {
-
-                return res.render(
-                    "register",
-                    {
-                        error:
-                            "Please fill all fields."
-                    }
-                );
-
-            }
-
-
-            if (
-                password !==
-                confirmPassword
-            ) {
-
-                return res.render(
-                    "register",
-                    {
-                        error:
-                            "Passwords do not match."
-                    }
-                );
-
-            }
-
-
-            if (
-                password.length < 6
-            ) {
-
-                return res.render(
-                    "register",
-                    {
-                        error:
-                            "Password must contain at least 6 characters."
-                    }
-                );
-
-            }
-
-
-            const existingUser =
-                await User.findOne({
-
-                    $or: [
-
-                        {
-                            email:
-                                email.toLowerCase()
-                        },
-
-                        {
-                            username:
-                                username
-                        }
-
-                    ]
-
-                });
-
-
-            if (existingUser) {
-
-                return res.render(
-                    "register",
-                    {
-                        error:
-                            "Username or email already exists."
-                    }
-                );
-
-            }
-
-
-            const hashedPassword =
-                await bcrypt.hash(
-                    password,
-                    10
-                );
-
-
-            const user =
-                new User({
-
-                    username,
-
-                    email:
-                        email.toLowerCase(),
-
-                    password:
-                        hashedPassword
-
-                });
-
-
-            await user.save();
-
-
-            res.redirect(
-                "/login"
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Registration error:",
-                error
-            );
-
-
-            res.render(
-                "register",
-                {
-                    error:
-                        "Something went wrong. Please try again."
-                }
-            );
-
+        if (
+            !cleanUsername ||
+            !cleanEmail ||
+            !password ||
+            !confirmPassword
+        ) {
+            return res.render("register", {
+                error:
+                    "Please fill all fields."
+            });
         }
 
-    }
-);
+        if (password !== confirmPassword) {
+            return res.render("register", {
+                error:
+                    "Passwords do not match."
+            });
+        }
 
+        if (password.length < 6) {
+            return res.render("register", {
+                error:
+                    "Password must contain at least 6 characters."
+            });
+        }
+
+        const existingUser =
+            await User.findOne({
+                $or: [
+                    {
+                        email:
+                            cleanEmail
+                    },
+                    {
+                        username:
+                            cleanUsername
+                    }
+                ]
+            });
+
+        if (existingUser) {
+            return res.render("register", {
+                error:
+                    "Username or email already exists."
+            });
+        }
+
+        const hashedPassword =
+            await bcrypt.hash(
+                password,
+                10
+            );
+
+        const user = new User({
+            username:
+                cleanUsername,
+
+            email:
+                cleanEmail,
+
+            password:
+                hashedPassword
+        });
+
+        await user.save();
+
+        return res.redirect("/login");
+
+    } catch (error) {
+        console.error(
+            "Registration error:",
+            error
+        );
+
+        return res.render("register", {
+            error:
+                "Something went wrong. Please try again."
+        });
+    }
+});
 
 // ====================================
 // LOGIN PAGE
 // ====================================
 
-router.get(
-    "/login",
-    (req, res) => {
-
-        if (req.session.user) {
-            return res.redirect("/chat");
-        }
-
-        res.render(
-            "login",
-            {
-                error: null
-            }
-        );
-
+router.get("/login", (req, res) => {
+    if (req.session.user) {
+        return res.redirect("/chat");
     }
-);
 
+    return res.render("login", {
+        error: null
+    });
+});
 
 // ====================================
 // LOGIN USER
 // ====================================
 
-router.post(
-    "/login",
-    async (req, res) => {
+router.post("/login", async (req, res) => {
+    try {
+        const {
+            email,
+            password
+        } = req.body;
 
-        try {
+        const cleanEmail =
+            String(email || "")
+                .trim()
+                .toLowerCase();
 
-            const {
-                email,
-                password
-            } = req.body;
-
-
-            if (
-                !email ||
-                !password
-            ) {
-
-                return res.render(
-                    "login",
-                    {
-                        error:
-                            "Please enter email and password."
-                    }
-                );
-
-            }
-
-
-            const user =
-                await User.findOne({
-
-                    email:
-                        email.toLowerCase()
-
-                });
-
-
-            if (!user) {
-
-                return res.render(
-                    "login",
-                    {
-                        error:
-                            "Invalid email or password."
-                    }
-                );
-
-            }
-
-
-            const isPasswordCorrect =
-                await bcrypt.compare(
-                    password,
-                    user.password
-                );
-
-
-            if (
-                !isPasswordCorrect
-            ) {
-
-                return res.render(
-                    "login",
-                    {
-                        error:
-                            "Invalid email or password."
-                    }
-                );
-
-            }
-
-
-            req.session.user = {
-
-                id:
-                    user._id.toString(),
-
-                username:
-                    user.username,
-
-                email:
-                    user.email
-
-            };
-
-
-            res.redirect(
-                "/chat"
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Login error:",
-                error
-            );
-
-
-            res.render(
-                "login",
-                {
-                    error:
-                        "Something went wrong. Please try again."
-                }
-            );
-
+        if (
+            !cleanEmail ||
+            !password
+        ) {
+            return res.render("login", {
+                error:
+                    "Please enter email and password."
+            });
         }
 
-    }
-);
+        // IMPORTANT:
+        // User.password has select:false
+        // in models/User.js, therefore
+        // explicitly include it here.
+        const user =
+            await User.findOne({
+                email:
+                    cleanEmail
+            }).select("+password");
 
+        if (!user) {
+            return res.render("login", {
+                error:
+                    "Invalid email or password."
+            });
+        }
+
+        const isPasswordCorrect =
+            await bcrypt.compare(
+                password,
+                user.password
+            );
+
+        if (!isPasswordCorrect) {
+            return res.render("login", {
+                error:
+                    "Invalid email or password."
+            });
+        }
+
+        // ====================================
+        // CREATE SESSION
+        // ====================================
+
+        req.session.user = {
+            id:
+                user._id.toString(),
+
+            username:
+                user.username,
+
+            email:
+                user.email
+        };
+
+        // ====================================
+        // SAVE SESSION BEFORE REDIRECT
+        // ====================================
+
+        req.session.save((error) => {
+            if (error) {
+                console.error(
+                    "Session save error:",
+                    error
+                );
+
+                return res.status(500).render(
+                    "login",
+                    {
+                        error:
+                            "Unable to create login session. Please try again."
+                    }
+                );
+            }
+
+            return res.redirect("/chat");
+        });
+
+    } catch (error) {
+        console.error(
+            "Login error:",
+            error
+        );
+
+        return res.status(500).render(
+            "login",
+            {
+                error:
+                    "Something went wrong. Please try again."
+            }
+        );
+    }
+});
 
 // ====================================
 // LOGOUT
 // ====================================
 
-router.get(
-    "/logout",
-    (req, res) => {
+router.get("/logout", (req, res) => {
+    req.session.destroy((error) => {
+        if (error) {
+            console.error(
+                "Logout error:",
+                error
+            );
+        }
 
-        req.session.destroy(
-            (error) => {
+        res.clearCookie("connect.sid");
 
-                if (error) {
+        return res.redirect("/login");
+    });
+});
 
-                    console.error(
-                        "Logout error:",
-                        error
-                    );
+// ====================================
+// EXPORT ROUTER
+// ====================================
 
-                }
-
-                res.redirect(
-                    "/login"
-                );
-
-            }
-        );
-
-    }
-);
-
-
-module.exports =
-    router;
+module.exports = router;

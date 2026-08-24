@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -15,6 +16,7 @@
         rel="stylesheet"
         href="/css/style.css"
     >
+
 </head>
 
 <body class="profile-page">
@@ -38,7 +40,6 @@
 
         </div>
 
-
         <!-- PROFILE CARD -->
 
         <div class="profile-card">
@@ -47,26 +48,24 @@
 
             <div class="profile-avatar">
 
-                <%= user.username
+                <%= String(user?.username || "U")
                     .charAt(0)
                     .toUpperCase()
                 %>
 
             </div>
 
-
             <!-- USERNAME -->
 
             <h2>
-                <%= user.username %>
+                <%= user?.username || "User" %>
             </h2>
-
 
             <!-- ONLINE STATUS -->
 
             <div class="profile-status">
 
-                <% if (user.isOnline) { %>
+                <% if (user?.isOnline) { %>
 
                     <span class="status-dot online"></span>
 
@@ -86,11 +85,9 @@
 
             </div>
 
-
             <!-- USER INFORMATION -->
 
             <div class="profile-info">
-
 
                 <!-- USERNAME -->
 
@@ -107,13 +104,12 @@
                         </span>
 
                         <span class="profile-info-value">
-                            <%= user.username %>
+                            <%= user?.username || "Not available" %>
                         </span>
 
                     </div>
 
                 </div>
-
 
                 <!-- EMAIL -->
 
@@ -130,13 +126,12 @@
                         </span>
 
                         <span class="profile-info-value">
-                            <%= user.email %>
+                            <%= user?.email || "Not available" %>
                         </span>
 
                     </div>
 
                 </div>
-
 
                 <!-- BIO -->
 
@@ -153,13 +148,12 @@
                         </span>
 
                         <span class="profile-info-value">
-                            <%= user.bio || "No bio added yet." %>
+                            <%= user?.bio || "No bio added yet." %>
                         </span>
 
                     </div>
 
                 </div>
-
 
                 <!-- ACCOUNT CREATED -->
 
@@ -177,7 +171,7 @@
 
                         <span class="profile-info-value">
 
-                            <%= user.createdAt
+                            <%= user?.createdAt
                                 ? new Date(
                                     user.createdAt
                                 ).toLocaleDateString(
@@ -197,7 +191,6 @@
 
                 </div>
 
-
                 <!-- LAST SEEN -->
 
                 <div class="profile-info-row">
@@ -214,11 +207,11 @@
 
                         <span class="profile-info-value">
 
-                            <% if (user.isOnline) { %>
+                            <% if (user?.isOnline) { %>
 
                                 Active now
 
-                            <% } else if (user.lastSeen) { %>
+                            <% } else if (user?.lastSeen) { %>
 
                                 <%= new Date(
                                     user.lastSeen
@@ -247,7 +240,6 @@
 
             </div>
 
-
             <!-- PROFILE ACTIONS -->
 
             <div class="profile-actions">
@@ -259,7 +251,6 @@
                     ✏️ Edit Profile
                 </a>
 
-
                 <a
                     href="/profile/password"
                     class="profile-btn secondary"
@@ -267,14 +258,12 @@
                     🔐 Change Password
                 </a>
 
-
                 <a
                     href="/chat"
                     class="profile-btn secondary"
                 >
                     💬 Back to Chat
                 </a>
-
 
                 <a
                     href="/logout"

@@ -1,27 +1,39 @@
 const mongoose = require("mongoose");
 
 // ====================================
+// REPLY-TO SUB-SCHEMA
+// (separate schema + default: null so an un-set replyTo is actually
+// `null`, not an object with empty/null fields)
+// ====================================
+
+const replyToSchema = new mongoose.Schema(
+    {
+        messageId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Message"
+        },
+        text: {
+            type: String,
+            default: ""
+        }
+    },
+    { _id: false }
+);
+
+// ====================================
 // MESSAGE SCHEMA
 // ====================================
 
 const messageSchema = new mongoose.Schema(
     {
-
-        // ====================================
         // SENDER
-        // ====================================
-
         username: {
             type: String,
             required: true,
             trim: true
         },
 
-
-        // ====================================
         // MESSAGE TEXT
-        // ====================================
-
         message: {
             type: String,
             required: true,
@@ -29,100 +41,57 @@ const messageSchema = new mongoose.Schema(
             maxlength: 5000
         },
 
-
-        // ====================================
         // PUBLIC ROOM
-        // ====================================
-
         room: {
             type: String,
             default: null,
             trim: true
         },
 
-
-        // ====================================
         // PRIVATE MESSAGE RECEIVER
-        // ====================================
-
         receiver: {
             type: String,
             default: null,
             trim: true
         },
 
-
-        // ====================================
-        // MESSAGE DELIVERED
-        // ====================================
-
+        // DELIVERY / READ STATUS
         delivered: {
             type: Boolean,
             default: false
         },
-
-
-        // ====================================
-        // MESSAGE SEEN
-        // ====================================
-
         seen: {
             type: Boolean,
             default: false
         },
-
-
-        // ====================================
-        // MESSAGE SEEN TIME
-        // ====================================
-
         seenAt: {
             type: Date,
             default: null
         },
 
-
-        // ====================================
-        // MESSAGE EDITED
-        // ====================================
-
+        // EDIT STATUS
         edited: {
             type: Boolean,
             default: false
         },
-
-
-        // ====================================
-        // MESSAGE EDITED TIME
-        // ====================================
-
         editedAt: {
             type: Date,
             default: null
         },
 
-
-        // ====================================
-        // MESSAGE DELETED
-        // ====================================
-
+        // DELETE STATUS
         deleted: {
             type: Boolean,
             default: false
         },
 
-
-        // ====================================
-        // MESSAGE REACTIONS
-        // ====================================
-
+        // REACTIONS
         reactions: [
             {
                 username: {
                     type: String,
                     required: true
                 },
-
                 emoji: {
                     type: String,
                     required: true
@@ -130,39 +99,26 @@ const messageSchema = new mongoose.Schema(
             }
         ],
 
-
-        // ====================================
         // REPLY TO MESSAGE
-        // ====================================
-
         replyTo: {
-
-            messageId: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Message",
-                default: null
-            },
-
-            text: {
-                type: String,
-                default: ""
-            }
-
+            type: replyToSchema,
+            default: null
         }
-
     },
-
     {
         timestamps: true
     }
 );
 
+// ====================================
+// INDEXES (for the query patterns used in routes/chat.js and server.js)
+// ====================================
+
+messageSchema.index({ room: 1, createdAt: 1 });
+messageSchema.index({ username: 1, receiver: 1, createdAt: 1 });
 
 // ====================================
 // EXPORT
 // ====================================
 
-module.exports = mongoose.model(
-    "Message",
-    messageSchema
-);
+module.exports = mongoose.model("Message", messageSchema);

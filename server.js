@@ -1,43 +1,25 @@
 // ====================================
-
 // IMPORTS
-
 // ====================================
 
 require("dotenv").config();
 
 const express = require("express");
-
 const mongoose = require("mongoose");
-
 const session = require("express-session");
-
 const path = require("path");
-
 const http = require("http");
-
 const { Server } = require("socket.io");
 
 const authRoutes = require("./routes/auth");
-
 const chatRoutes = require("./routes/chat");
-
 const profileRoutes = require("./routes/profile");
 
-console.log(
-  "AUTH ROUTES:",
-
-  authRoutes.stack.map((route) => route.route && route.route.path),
-);
-
 const Message = require("./models/Message");
-
 const User = require("./models/User");
 
 // ====================================
-
 // APP SETUP
-
 // ====================================
 
 const app = express();
@@ -46,40 +28,22 @@ const server = http.createServer(app);
 
 const io = new Server(server);
 
-console.log(
-  "AUTH ROUTES:",
-
-  authRoutes.stack.map((route) => route.route && route.route.path),
-);
-
-console.log(
-  "PROFILE ROUTES:",
-
-  profileRoutes.stack.map((route) => route.route && route.route.path),
-);
-
+// ====================================
+// ENVIRONMENT CHECK
 // ====================================
 
-// MONGODB
+if (!process.env.MONGO_URI) {
+  console.error("ERROR: MONGO_URI is missing in .env");
+  process.exit(1);
+}
+
+if (!process.env.SESSION_SECRET) {
+  console.error("ERROR: SESSION_SECRET is missing in .env");
+  process.exit(1);
+}
 
 // ====================================
-
-mongoose
-
-  .connect(process.env.MONGO_URI)
-
-  .then(() => {
-    console.log("MongoDB connected successfully");
-  })
-
-  .catch((error) => {
-    console.error("MongoDB connection error:", error);
-  });
-
-// ====================================
-
 // BODY PARSER
-
 // ====================================
 
 app.use(
@@ -91,17 +55,13 @@ app.use(
 app.use(express.json());
 
 // ====================================
-
 // STATIC FILES
-
 // ====================================
 
 app.use(express.static(path.join(__dirname, "public")));
 
 // ====================================
-
 // EJS
-
 // ====================================
 
 app.set("view engine", "ejs");
@@ -109,48 +69,45 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 // ====================================
-
 // SESSION
-
-// ====================================
-console.log("SESSION_SECRET CHECK:", !!process.env.SESSION_SECRET);
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-
-    resave: false,
-
-    saveUninitialized: false,
-
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 24,
-    },
-  }),
-);
-
 // ====================================
 
+const sessionMiddleware = session({
+  secret: process.env.SESSION_SECRET,
+
+  resave: false,
+
+  saveUninitialized: false,
+
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24,
+
+    httpOnly: true,
+
+    sameSite: "lax",
+
+    secure: process.env.NODE_ENV === "production",
+  },
+});
+
+app.use(sessionMiddleware);
+
+// ====================================
+// MONGODB
+// ====================================
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB connected successfully");
+  })
+  .catch((error) => {
+    console.error("MongoDB connection error:", error);
+  });
+
+// ====================================
 // ROUTES
-
 // ====================================
-
-app.get("/route-test", (req, res) => {
-  res.send("ROUTES ARE WORKING");
-});
-
-// ====================================
-
-// HOME ROUTE
-
-// ====================================
-
-app.get("/", (req, res) => {
-  if (req.session.user) {
-    return res.redirect("/chat");
-  }
-
-  return res.redirect("/login");
-});
 
 app.use("/", authRoutes);
 
@@ -159,183 +116,27 @@ app.use("/", chatRoutes);
 app.use("/", profileRoutes);
 
 // ====================================
-
-// HTTP EDIT MESSAGE API
-
+// HOME ROUTE
 // ====================================
 
-app.put("/api/messages/:messageId", async (req, res) => {
-  try {
-    const { messageId } = req.params;
-
-    const { message } = req.body;
-
-    if (!req.session.user) {
-      return res.status(401).json({
-        error: "You must be logged in.",
-      });
-    }
-
-    if (!message || !message.trim()) {
-      return res.status(400).json({
-        error: "Message cannot be empty.",
-      });
-    }
-
-    const username = req.session.user.username;
-
-    const existingMessage = await Message.findById(messageId);
-
-    if (!existingMessage) {
-      return res.status(404).json({
-        error: "Message not found.",
-      });
-    }
-
-    if (existingMessage.username !== username) {
-      return res.status(403).json({
-        error: "You can only edit your own messages.",
-      });
-    }
-
-    if (existingMessage.deleted) {
-      return res.status(400).json({
-        error: "Deleted messages cannot be edited.",
-      });
-    }
-
-    existingMessage.message = message.trim();
-
-    existingMessage.edited = true;
-
-    existingMessage.editedAt = new Date();
-
-    await existingMessage.save();
-
-    let targetRoom;
-
-    if (existingMessage.room) {
-      targetRoom = existingMessage.room;
-    } else {
-      const users = [existingMessage.username, existingMessage.receiver].sort();
-
-      targetRoom = `private_${users[0]}_${users[1]}`;
-    }
-
-    io.to(targetRoom).emit("messageEdited", {
-      messageId: existingMessage._id,
-
-      message: existingMessage.message,
-
-      edited: true,
-
-      editedAt: existingMessage.editedAt,
-    });
-
-    return res.json({
-      success: true,
-
-      message: existingMessage.message,
-
-      edited: true,
-
-      editedAt: existingMessage.editedAt,
-    });
-  } catch (error) {
-    console.error("HTTP edit message error:", error);
-
-    return res.status(500).json({
-      error: "Unable to edit message.",
-    });
+app.get("/", (req, res) => {
+  if (req.session && req.session.user) {
+    return res.redirect("/chat");
   }
+
+  return res.redirect("/login");
 });
 
 // ====================================
-
-// HTTP DELETE MESSAGE API
-
+// ROUTE TEST
 // ====================================
 
-app.delete("/api/messages/:messageId", async (req, res) => {
-  try {
-    const { messageId } = req.params;
-
-    if (!req.session.user) {
-      return res.status(401).json({
-        error: "You must be logged in.",
-      });
-    }
-
-    const username = req.session.user.username;
-
-    const message = await Message.findById(messageId);
-
-    if (!message) {
-      return res.status(404).json({
-        error: "Message not found.",
-      });
-    }
-
-    if (message.username !== username) {
-      return res.status(403).json({
-        error: "You can only delete your own messages.",
-      });
-    }
-
-    if (message.deleted) {
-      return res.status(400).json({
-        error: "Message is already deleted.",
-      });
-    }
-
-    message.message = "This message was deleted";
-
-    message.deleted = true;
-
-    message.edited = false;
-
-    message.editedAt = null;
-
-    await message.save();
-
-    let targetRoom;
-
-    if (message.room) {
-      targetRoom = message.room;
-    } else {
-      const users = [message.username, message.receiver].sort();
-
-      targetRoom = `private_${users[0]}_${users[1]}`;
-    }
-
-    io.to(targetRoom).emit("messageDeleted", {
-      messageId: message._id,
-
-      message: "This message was deleted",
-
-      deleted: true,
-    });
-
-    return res.json({
-      success: true,
-
-      message: "This message was deleted",
-
-      deleted: true,
-    });
-  } catch (error) {
-    console.error("HTTP delete message error:", error);
-
-    return res.status(500).json({
-      error: "Unable to delete message.",
-    });
-  }
+app.get("/route-test", (req, res) => {
+  res.send("ROUTES ARE WORKING");
 });
 
 // ====================================
-
 // ONLINE USERS
-
 // ====================================
 
 const onlineUsers = {};
@@ -343,18 +144,22 @@ const onlineUsers = {};
 const connectedUsers = new Map();
 
 // ====================================
+// SOCKET.IO SESSION
+// ====================================
 
+io.use((socket, next) => {
+  sessionMiddleware(socket.request, {}, next);
+});
+
+// ====================================
 // SOCKET.IO CONNECTION
-
 // ====================================
 
 io.on("connection", (socket) => {
   console.log("New user connected:", socket.id);
 
   // ====================================
-
   // USER ONLINE
-
   // ====================================
 
   socket.on("userOnline", async ({ username }) => {
@@ -363,15 +168,20 @@ io.on("connection", (socket) => {
     }
 
     try {
-      socket.username = username;
+      const cleanUsername = String(username).trim();
 
-      connectedUsers.set(username, socket.id);
+      if (!cleanUsername) {
+        return;
+      }
+
+      socket.username = cleanUsername;
+
+      connectedUsers.set(cleanUsername, socket.id);
 
       await User.findOneAndUpdate(
         {
-          username,
+          username: cleanUsername,
         },
-
         {
           $set: {
             isOnline: true,
@@ -382,7 +192,7 @@ io.on("connection", (socket) => {
       );
 
       io.emit("userStatus", {
-        username,
+        username: cleanUsername,
 
         isOnline: true,
 
@@ -390,33 +200,27 @@ io.on("connection", (socket) => {
       });
 
       io.emit("userOnline", {
-        username,
+        username: cleanUsername,
 
         isOnline: true,
 
         lastSeen: null,
       });
 
-      io.emit(
-        "usersUpdated",
+      const users = await User.find({})
+        .select("_id username isOnline lastSeen unreadMessages")
+        .lean();
 
-        await User.find({})
+      io.emit("usersUpdated", users);
 
-          .select("_id username isOnline lastSeen unreadMessages")
-
-          .lean(),
-      );
-
-      console.log(`${username} is online`);
+      console.log(`${cleanUsername} is online`);
     } catch (error) {
       console.error("Online status error:", error);
     }
   });
 
   // ====================================
-
   // JOIN PUBLIC ROOM
-
   // ====================================
 
   socket.on("joinRoom", ({ username, room }) => {
@@ -424,49 +228,60 @@ io.on("connection", (socket) => {
       return;
     }
 
-    socket.join(room);
+    const cleanUsername = String(username).trim();
 
-    socket.username = username;
+    const cleanRoom = String(room).trim();
 
-    socket.room = room;
-
-    if (!onlineUsers[room]) {
-      onlineUsers[room] = new Map();
+    if (!cleanUsername || !cleanRoom) {
+      return;
     }
 
-    onlineUsers[room].set(socket.id, username);
+    socket.join(cleanRoom);
 
-    socket.to(room).emit("systemMessage", {
-      message: `${username} joined the room`,
+    socket.username = cleanUsername;
+
+    socket.room = cleanRoom;
+
+    if (!onlineUsers[cleanRoom]) {
+      onlineUsers[cleanRoom] = new Map();
+    }
+
+    onlineUsers[cleanRoom].set(socket.id, cleanUsername);
+
+    socket.to(cleanRoom).emit("systemMessage", {
+      message: `${cleanUsername} joined the room`,
     });
 
-    io.to(room).emit(
+    io.to(cleanRoom).emit(
       "onlineUsers",
-
-      Array.from(onlineUsers[room].values()),
+      Array.from(onlineUsers[cleanRoom].values()),
     );
   });
 
   // ====================================
-
   // PUBLIC CHAT MESSAGE
-
   // ====================================
 
   socket.on("chatMessage", async (data) => {
     try {
-      const { username, message, room, replyTo } = data;
+      const { username, message, room } = data || {};
 
       if (!username || !room || !message || !message.trim()) {
         return;
       }
 
+      const cleanUsername = String(username).trim();
+
+      const cleanMessage = String(message).trim();
+
+      const cleanRoom = String(room).trim();
+
       const newMessage = new Message({
-        username,
+        username: cleanUsername,
 
-        message: message.trim(),
+        message: cleanMessage,
 
-        room,
+        room: cleanRoom,
 
         receiver: null,
 
@@ -475,22 +290,11 @@ io.on("connection", (socket) => {
         seen: false,
 
         seenAt: null,
-
-        deleted: false,
-
-        replyTo:
-          replyTo && replyTo.messageId
-            ? {
-                messageId: replyTo.messageId,
-
-                text: replyTo.text || "",
-              }
-            : null,
       });
 
       await newMessage.save();
 
-      io.to(room).emit("message", {
+      io.to(cleanRoom).emit("message", {
         _id: newMessage._id,
 
         username: newMessage.username,
@@ -510,8 +314,6 @@ io.on("connection", (socket) => {
         edited: newMessage.edited,
 
         deleted: newMessage.deleted,
-
-        replyTo: newMessage.replyTo || null,
       });
     } catch (error) {
       console.error("Public message error:", error);
@@ -519,9 +321,7 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // PUBLIC TYPING
-
   // ====================================
 
   socket.on("typing", ({ username, room }) => {
@@ -535,9 +335,7 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // STOP PUBLIC TYPING
-
   // ====================================
 
   socket.on("stopTyping", ({ room }) => {
@@ -549,9 +347,7 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // JOIN PRIVATE CHAT
-
   // ====================================
 
   socket.on("joinPrivateChat", async ({ username, receiver }) => {
@@ -559,29 +355,35 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const users = [username, receiver].sort();
-
-    const privateRoom = `private_${users[0]}_${users[1]}`;
-
-    socket.join(privateRoom);
-
-    socket.privateRoom = privateRoom;
-
-    socket.privateUsername = username;
-
-    socket.privateReceiver = receiver;
-
     try {
+      const cleanUsername = String(username).trim();
+
+      const cleanReceiver = String(receiver).trim();
+
+      if (!cleanUsername || !cleanReceiver || cleanUsername === cleanReceiver) {
+        return;
+      }
+
+      const users = [cleanUsername, cleanReceiver].sort();
+
+      const privateRoom = `private_${users[0]}_${users[1]}`;
+
+      socket.join(privateRoom);
+
+      socket.privateRoom = privateRoom;
+
+      socket.privateUsername = cleanUsername;
+
+      socket.privateReceiver = cleanReceiver;
+
       const target = await User.findOne({
-        username: receiver,
+        username: cleanReceiver,
       })
-
         .select("username isOnline lastSeen")
-
         .lean();
 
       socket.emit("targetUserStatus", {
-        username: receiver,
+        username: cleanReceiver,
 
         isOnline: Boolean(target?.isOnline),
 
@@ -593,33 +395,33 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // PRIVATE MESSAGE
-
   // ====================================
 
   socket.on("privateMessage", async (data) => {
     try {
-      const {
-        username,
-
-        receiver,
-
-        message,
-
-        replyTo,
-      } = data;
+      const { username, receiver, message } = data || {};
 
       if (!username || !receiver || !message || !message.trim()) {
         return;
       }
 
+      const cleanUsername = String(username).trim();
+
+      const cleanReceiver = String(receiver).trim();
+
+      const cleanMessage = String(message).trim();
+
+      if (cleanUsername === cleanReceiver) {
+        return;
+      }
+
       const newMessage = new Message({
-        username,
+        username: cleanUsername,
 
-        message: message.trim(),
+        message: cleanMessage,
 
-        receiver,
+        receiver: cleanReceiver,
 
         room: null,
 
@@ -628,20 +430,11 @@ io.on("connection", (socket) => {
         seen: false,
 
         seenAt: null,
-
-        replyTo:
-          replyTo && replyTo.messageId
-            ? {
-                messageId: replyTo.messageId,
-
-                text: replyTo.text || "",
-              }
-            : null,
       });
 
       await newMessage.save();
 
-      const receiverSocket = connectedUsers.get(receiver);
+      const receiverSocket = connectedUsers.get(cleanReceiver);
 
       const receiverIsOnline = Boolean(receiverSocket);
 
@@ -653,9 +446,8 @@ io.on("connection", (socket) => {
 
       await User.findOneAndUpdate(
         {
-          username: receiver,
+          username: cleanReceiver,
         },
-
         {
           $inc: {
             unreadMessages: 1,
@@ -663,7 +455,7 @@ io.on("connection", (socket) => {
         },
       );
 
-      const users = [username, receiver].sort();
+      const users = [cleanUsername, cleanReceiver].sort();
 
       const privateRoom = `private_${users[0]}_${users[1]}`;
 
@@ -689,8 +481,6 @@ io.on("connection", (socket) => {
         edited: newMessage.edited,
 
         deleted: newMessage.deleted,
-
-        replyTo: newMessage.replyTo || null,
       };
 
       io.to(privateRoom).emit("privateMessage", messageData);
@@ -699,7 +489,7 @@ io.on("connection", (socket) => {
         io.to(receiverSocket).emit("newMessageNotification", {
           messageId: newMessage._id,
 
-          sender: username,
+          sender: cleanUsername,
 
           message: newMessage.message,
 
@@ -711,13 +501,15 @@ io.on("connection", (socket) => {
 
       if (receiverSocket) {
         const receiverUser = await User.findOne({
-          username: receiver,
-        }).select("unreadMessages");
+          username: cleanReceiver,
+        })
+          .select("unreadMessages")
+          .lean();
 
         io.to(receiverSocket).emit("unreadCount", {
           count: receiverUser ? receiverUser.unreadMessages : 0,
 
-          sender: username,
+          sender: cleanUsername,
         });
       }
     } catch (error) {
@@ -726,9 +518,7 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // MARK CHAT AS READ
-
   // ====================================
 
   socket.on("markChatAsRead", async ({ username }) => {
@@ -737,17 +527,17 @@ io.on("connection", (socket) => {
         return;
       }
 
+      const cleanUsername = String(username).trim();
+
       const currentUser = await User.findOneAndUpdate(
         {
-          username,
+          username: cleanUsername,
         },
-
         {
           $set: {
             unreadMessages: 0,
           },
         },
-
         {
           new: true,
         },
@@ -762,9 +552,7 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // MESSAGE DELIVERED
-
   // ====================================
 
   socket.on("messageDelivered", async ({ messageId, username }) => {
@@ -800,9 +588,7 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // MESSAGE SEEN
-
   // ====================================
 
   socket.on("messageSeen", async ({ messageId, username }) => {
@@ -844,14 +630,11 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // EDIT MESSAGE
-
   // ====================================
 
   socket.on(
     "editMessage",
-
     async ({ messageId, username, message, newMessage }) => {
       try {
         const editedText = typeof message === "string" ? message : newMessage;
@@ -862,36 +645,20 @@ io.on("connection", (socket) => {
           typeof editedText !== "string" ||
           !editedText.trim()
         ) {
-          console.log("Invalid edit request:", {
-            messageId,
-
-            username,
-
-            message,
-
-            newMessage,
-          });
-
           return;
         }
 
         const existingMessage = await Message.findById(messageId);
 
         if (!existingMessage) {
-          console.log("Edit failed: message not found");
-
           return;
         }
 
         if (existingMessage.username !== username) {
-          console.log("Edit failed: unauthorized user");
-
           return;
         }
 
         if (existingMessage.deleted) {
-          console.log("Edit failed: message already deleted");
-
           return;
         }
 
@@ -910,7 +677,6 @@ io.on("connection", (socket) => {
         } else {
           const users = [
             existingMessage.username,
-
             existingMessage.receiver,
           ].sort();
 
@@ -926,10 +692,6 @@ io.on("connection", (socket) => {
 
           editedAt: existingMessage.editedAt,
         });
-
-        console.log(
-          `Message edited by ${username}: ${existingMessage.message}`,
-        );
       } catch (error) {
         console.error("Edit message error:", error);
       }
@@ -937,9 +699,7 @@ io.on("connection", (socket) => {
   );
 
   // ====================================
-
   // DELETE MESSAGE
-
   // ====================================
 
   socket.on("deleteMessage", async ({ messageId, username }) => {
@@ -995,9 +755,7 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // PRIVATE TYPING
-
   // ====================================
 
   socket.on("privateTyping", ({ username, receiver }) => {
@@ -1015,9 +773,7 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // STOP PRIVATE TYPING
-
   // ====================================
 
   socket.on("stopPrivateTyping", ({ username, receiver }) => {
@@ -1033,9 +789,7 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // ADD REACTION
-
   // ====================================
 
   socket.on("addReaction", async ({ messageId, username, emoji }) => {
@@ -1062,7 +816,6 @@ io.on("connection", (socket) => {
 
       message.reactions.push({
         username,
-
         emoji,
       });
 
@@ -1089,9 +842,7 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // REMOVE REACTION
-
   // ====================================
 
   socket.on("removeReaction", async ({ messageId, username }) => {
@@ -1133,9 +884,7 @@ io.on("connection", (socket) => {
   });
 
   // ====================================
-
   // DISCONNECT
-
   // ====================================
 
   socket.on("disconnect", async () => {
@@ -1146,9 +895,7 @@ io.on("connection", (socket) => {
     const room = socket.room;
 
     // ====================================
-
     // REMOVE CONNECTED USER
-
     // ====================================
 
     if (username) {
@@ -1160,9 +907,7 @@ io.on("connection", (socket) => {
     }
 
     // ====================================
-
     // REMOVE FROM ROOM
-
     // ====================================
 
     if (room && onlineUsers[room]) {
@@ -1174,17 +919,11 @@ io.on("connection", (socket) => {
         });
       }
 
-      io.to(room).emit(
-        "onlineUsers",
-
-        Array.from(onlineUsers[room].values()),
-      );
+      io.to(room).emit("onlineUsers", Array.from(onlineUsers[room].values()));
     }
 
     // ====================================
-
     // OFFLINE STATUS
-
     // ====================================
 
     if (username) {
@@ -1198,7 +937,6 @@ io.on("connection", (socket) => {
             {
               username,
             },
-
             {
               $set: {
                 isOnline: false,
@@ -1224,15 +962,11 @@ io.on("connection", (socket) => {
             lastSeen,
           });
 
-          io.emit(
-            "usersUpdated",
+          const users = await User.find({})
+            .select("_id username isOnline lastSeen unreadMessages")
+            .lean();
 
-            await User.find({})
-
-              .select("_id username isOnline lastSeen unreadMessages")
-
-              .lean(),
-          );
+          io.emit("usersUpdated", users);
         }
       } catch (error) {
         console.error("Offline status error:", error);
@@ -1248,9 +982,7 @@ io.on("connection", (socket) => {
 });
 
 // ====================================
-
 // START SERVER
-
 // ====================================
 
 const PORT = process.env.PORT || 3000;
