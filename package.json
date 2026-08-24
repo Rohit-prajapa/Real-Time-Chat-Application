@@ -15,6 +15,9 @@
   ],
   "author": "Rohit Prajapati",
   "license": "ISC",
+  "engines": {
+    "node": "24.x"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.1",

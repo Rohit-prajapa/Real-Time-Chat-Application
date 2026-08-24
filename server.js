@@ -29,6 +29,12 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // ====================================
+// TRUST PROXY
+// ====================================
+
+app.set("trust proxy", 1);
+
+// ====================================
 // ENVIRONMENT CHECK
 // ====================================
 
@@ -133,6 +139,19 @@ app.get("/", (req, res) => {
 
 app.get("/route-test", (req, res) => {
   res.send("ROUTES ARE WORKING");
+});
+
+// ====================================
+// HEALTH CHECK
+// ====================================
+
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    message: "ChatWave server is running",
+    mongodb:
+      mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+  });
 });
 
 // ====================================
@@ -982,11 +1001,21 @@ io.on("connection", (socket) => {
 });
 
 // ====================================
-// START SERVER
+// VERCEL / LOCAL SERVER EXPORT
 // ====================================
 
-const PORT = process.env.PORT || 3000;
+module.exports = server;
 
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// ====================================
+// LOCAL DEVELOPMENT SERVER
+// ====================================
+
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(
+      `Server running on http://localhost:${PORT}`
+    );
+  });
+}
