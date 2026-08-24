@@ -138,6 +138,20 @@ app.get("/route-test", (req, res) => {
   res.send("ROUTES ARE WORKING");
 });
 
+// ====================================
+
+// HOME ROUTE
+
+// ====================================
+
+app.get("/", (req, res) => {
+  if (req.session.user) {
+    return res.redirect("/chat");
+  }
+
+  return res.redirect("/login");
+});
+
 app.use("/", authRoutes);
 
 app.use("/", chatRoutes);
@@ -316,20 +330,6 @@ app.delete("/api/messages/:messageId", async (req, res) => {
       error: "Unable to delete message.",
     });
   }
-});
-
-// ====================================
-
-// HOME ROUTE
-
-// ====================================
-
-app.get("/", (req, res) => {
-  if (req.session.user) {
-    return res.redirect("/chat");
-  }
-
-  return res.redirect("/login");
 });
 
 // ====================================
