@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>My Profile - ChatWave</title>
+
+    <link
+        rel="stylesheet"
+        href="/css/style.css"
+    >
+</head>
+
+<body class="profile-page">
+
+    <div class="profile-container">
+
+        <!-- PROFILE HEADER -->
+
+        <div class="profile-header">
+
+            <a
+                href="/chat"
+                class="back-btn"
+            >
+                ← Back to Chat
+            </a>
+
+            <h1>
+                My Profile
+            </h1>
+
+        </div>
+
+
+        <!-- PROFILE CARD -->
+
+        <div class="profile-card">
+
+            <!-- AVATAR -->
+
+            <div class="profile-avatar">
+
+                <%= user.username
+                    .charAt(0)
+                    .toUpperCase()
+                %>
+
+            </div>
+
+
+            <!-- USERNAME -->
+
+            <h2>
+                <%= user.username %>
+            </h2>
+
+
+            <!-- ONLINE STATUS -->
+
+            <div class="profile-status">
+
+                <% if (user.isOnline) { %>
+
+                    <span class="status-dot online"></span>
+
+                    <span>
+                        Online
+                    </span>
+
+                <% } else { %>
+
+                    <span class="status-dot offline"></span>
+
+                    <span>
+                        Offline
+                    </span>
+
+                <% } %>
+
+            </div>
+
+
+            <!-- USER INFORMATION -->
+
+            <div class="profile-info">
+
+
+                <!-- USERNAME -->
+
+                <div class="profile-info-row">
+
+                    <div class="profile-info-icon">
+                        👤
+                    </div>
+
+                    <div class="profile-info-content">
+
+                        <span class="profile-info-label">
+                            Username
+                        </span>
+
+                        <span class="profile-info-value">
+                            <%= user.username %>
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- EMAIL -->
+
+                <div class="profile-info-row">
+
+                    <div class="profile-info-icon">
+                        📧
+                    </div>
+
+                    <div class="profile-info-content">
+
+                        <span class="profile-info-label">
+                            Email
+                        </span>
+
+                        <span class="profile-info-value">
+                            <%= user.email %>
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- BIO -->
+
+                <div class="profile-info-row">
+
+                    <div class="profile-info-icon">
+                        📝
+                    </div>
+
+                    <div class="profile-info-content">
+
+                        <span class="profile-info-label">
+                            Bio
+                        </span>
+
+                        <span class="profile-info-value">
+                            <%= user.bio || "No bio added yet." %>
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ACCOUNT CREATED -->
+
+                <div class="profile-info-row">
+
+                    <div class="profile-info-icon">
+                        📅
+                    </div>
+
+                    <div class="profile-info-content">
+
+                        <span class="profile-info-label">
+                            Account Created
+                        </span>
+
+                        <span class="profile-info-value">
+
+                            <%= user.createdAt
+                                ? new Date(
+                                    user.createdAt
+                                ).toLocaleDateString(
+                                    "en-IN",
+                                    {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric"
+                                    }
+                                )
+                                : "Not available"
+                            %>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- LAST SEEN -->
+
+                <div class="profile-info-row">
+
+                    <div class="profile-info-icon">
+                        🕐
+                    </div>
+
+                    <div class="profile-info-content">
+
+                        <span class="profile-info-label">
+                            Last Seen
+                        </span>
+
+                        <span class="profile-info-value">
+
+                            <% if (user.isOnline) { %>
+
+                                Active now
+
+                            <% } else if (user.lastSeen) { %>
+
+                                <%= new Date(
+                                    user.lastSeen
+                                ).toLocaleString(
+                                    "en-IN",
+                                    {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit"
+                                    }
+                                ) %>
+
+                            <% } else { %>
+
+                                Not available
+
+                            <% } %>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- PROFILE ACTIONS -->
+
+            <div class="profile-actions">
+
+                <a
+                    href="/profile/edit"
+                    class="profile-btn primary"
+                >
+                    ✏️ Edit Profile
+                </a>
+
+
+                <a
+                    href="/profile/password"
+                    class="profile-btn secondary"
+                >
+                    🔐 Change Password
+                </a>
+
+
+                <a
+                    href="/chat"
+                    class="profile-btn secondary"
+                >
+                    💬 Back to Chat
+                </a>
+
+
+                <a
+                    href="/logout"
+                    class="profile-btn danger"
+                >
+                    🚪 Logout
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

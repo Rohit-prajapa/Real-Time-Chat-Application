@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Edit Profile - ChatWave</title>
+
+    <link
+        rel="stylesheet"
+        href="/css/style.css"
+    >
+</head>
+
+<body class="profile-page">
+
+    <div class="profile-container">
+
+        <!-- HEADER -->
+
+        <div class="profile-header">
+
+            <a
+                href="/profile"
+                class="back-btn"
+            >
+                ← Back to Profile
+            </a>
+
+            <h1>
+                Edit Profile
+            </h1>
+
+        </div>
+
+
+        <!-- EDIT PROFILE CARD -->
+
+        <div class="profile-card edit-profile-card">
+
+            <!-- AVATAR -->
+
+            <div class="profile-avatar">
+                <%= user.username.charAt(0).toUpperCase() %>
+            </div>
+
+            <h2>
+                Edit Your Profile
+            </h2>
+
+            <p class="edit-profile-subtitle">
+                Update your ChatWave account information
+            </p>
+
+
+            <!-- ERROR -->
+
+            <% if (typeof error !== "undefined" && error) { %>
+
+                <div class="profile-message error-message">
+                    <%= error %>
+                </div>
+
+            <% } %>
+
+
+            <!-- SUCCESS -->
+
+            <% if (typeof success !== "undefined" && success) { %>
+
+                <div class="profile-message success-message">
+                    <%= success %>
+                </div>
+
+            <% } %>
+
+
+            <!-- FORM -->
+
+            <form
+                action="/profile/edit"
+                method="POST"
+                class="profile-form"
+            >
+
+                <!-- USERNAME -->
+
+                <div class="profile-form-group">
+
+                    <label for="username">
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        value="<%= user.username %>"
+                        placeholder="Enter username"
+                        minlength="3"
+                        maxlength="30"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- EMAIL -->
+
+                <div class="profile-form-group">
+
+                    <label for="email">
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value="<%= user.email %>"
+                        placeholder="Enter email"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- BIO -->
+
+                <div class="profile-form-group">
+
+                    <label for="bio">
+                        Bio
+                    </label>
+
+                    <textarea
+                        id="bio"
+                        name="bio"
+                        rows="4"
+                        maxlength="160"
+                        placeholder="Tell people something about yourself..."
+                    ><%= user.bio || "" %></textarea>
+
+                    <small>
+                        Maximum 160 characters
+                    </small>
+
+                </div>
+
+
+                <!-- ACTIONS -->
+
+                <div class="profile-form-actions">
+
+                    <button
+                        type="submit"
+                        class="profile-btn primary"
+                    >
+                        💾 Save Changes
+                    </button>
+
+                    <a
+                        href="/profile"
+                        class="profile-btn secondary"
+                    >
+                        Cancel
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

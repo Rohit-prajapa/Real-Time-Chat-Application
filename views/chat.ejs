@@ -3,230 +3,627 @@
 
 <head>
 
-  <meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-  <title>ChatWave</title>
+    <title>ChatWave</title>
 
-  <link
-    rel="stylesheet"
-    href="/css/style.css"
-  >
+    <link
+        rel="stylesheet"
+        href="/css/style.css"
+    >
 
 </head>
 
 <body>
 
-<div class="chat-app">
+<div
+    class="chat-app"
+    data-current-user="<%= user.username %>"
+    data-current-room="<%= room || '' %>"
+    data-private-chat="<%= privateChat ? 'true' : 'false' %>"
+    data-target-user="<%= targetUser ? targetUser.username : '' %>"
+>
 
-  <!-- SIDEBAR -->
+    <!-- ================= SIDEBAR ================= -->
 
-  <aside class="sidebar">
-
-    <div>
-
-      <div class="sidebar-logo">
-        💬 ChatWave
-      </div>
-
-      <div class="profile">
-
-        <div class="avatar">
-
-          <%= user.username.charAt(0).toUpperCase() %>
-
-        </div>
+    <aside class="sidebar">
 
         <div>
 
-          <h3>
-            <%= user.username %>
-          </h3>
+            <div class="sidebar-logo">
+                💬 ChatWave
+            </div>
 
-          <span>
-            ● Online
-          </span>
+            <!-- PROFILE -->
 
-        </div>
+            <a
+                href="/profile"
+                class="sidebar-profile-link"
+                title="Open My Profile"
+            >
 
-      </div>
+                <div class="profile">
 
-      <div class="rooms">
+                    <div class="avatar">
+                        <%= user.username.charAt(0).toUpperCase() %>
+                    </div>
 
-        <h4>CHAT ROOMS</h4>
+                    <div>
 
-        <a
-          href="/chat?room=general"
-          class="<%= room === 'general' ? 'active' : '' %>"
-        >
-          # General
-        </a>
+                        <h3>
+                            <%= user.username %>
+                        </h3>
 
-        <a
-          href="/chat?room=technology"
-          class="<%= room === 'technology' ? 'active' : '' %>"
-        >
-          # Technology
-        </a>
+                        <span>
+                            ● Online
+                        </span>
 
-        <a
-          href="/chat?room=college"
-          class="<%= room === 'college' ? 'active' : '' %>"
-        >
-          # College
-        </a>
+                        <% if (user.bio) { %>
 
-        <a
-          href="/chat?room=random"
-          class="<%= room === 'random' ? 'active' : '' %>"
-        >
-          # Random
-        </a>
+                            <small class="sidebar-profile-bio">
+                                <%= user.bio %>
+                            </small>
 
-      </div>
+                        <% } else { %>
 
-      <div class="online-section">
+                            <small class="sidebar-profile-bio">
+                                View profile
+                            </small>
 
-        <h4>
-          ONLINE USERS
-        </h4>
+                        <% } %>
 
-        <ul id="onlineUsers"></ul>
+                    </div>
 
-      </div>
+                </div>
 
-    </div>
-
-    <a
-      href="/logout"
-      class="logout-btn"
-    >
-      Logout
-    </a>
-
-  </aside>
+            </a>
 
 
-  <!-- CHAT -->
+            <!-- USERS -->
 
-  <main class="chat-container">
+            <div class="users-section">
 
-    <header class="chat-header">
+                <h4>
+                    USERS
+                </h4>
 
-      <div>
+                <div class="user-search">
 
-        <h2>
-          # <%= room %>
-        </h2>
+                    <input
+                        type="text"
+                        id="userSearchInput"
+                        placeholder="Search users..."
+                        autocomplete="off"
+                    >
 
-        <p>
-          Real-time conversation
-        </p>
+                </div>
 
-      </div>
+                <ul id="allUsers">
 
-      <div class="connection-status">
-        ● Live
-      </div>
+                    <li class="loading-users">
+                        Loading users...
+                    </li>
 
-    </header>
-
-
-    <div
-      class="messages"
-      id="messages"
-    >
-
-      <% messages.forEach(msg => { %>
-
-        <div
-          class="message <%= msg.username === user.username ? 'my-message' : '' %>"
-        >
-
-          <div class="message-avatar">
-
-            <%= msg.username.charAt(0).toUpperCase() %>
-
-          </div>
-
-          <div class="message-content">
-
-            <div class="message-info">
-
-              <strong>
-                <%= msg.username %>
-              </strong>
-
-              <span>
-
-                <%= new Date(msg.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit"
-                }) %>
-
-              </span>
+                </ul>
 
             </div>
 
-            <p>
-              <%= msg.message %>
-            </p>
 
-          </div>
+            <!-- CHAT ROOMS -->
+
+            <div class="rooms">
+
+                <h4>
+                    CHAT ROOMS
+                </h4>
+
+                <a
+                    href="/chat?room=general"
+                    class="<%= !privateChat && room === 'general'
+                        ? 'active'
+                        : '' %>"
+                >
+                    # General
+                </a>
+
+                <a
+                    href="/chat?room=technology"
+                    class="<%= !privateChat && room === 'technology'
+                        ? 'active'
+                        : '' %>"
+                >
+                    # Technology
+                </a>
+
+                <a
+                    href="/chat?room=college"
+                    class="<%= !privateChat && room === 'college'
+                        ? 'active'
+                        : '' %>"
+                >
+                    # College
+                </a>
+
+                <a
+                    href="/chat?room=random"
+                    class="<%= !privateChat && room === 'random'
+                        ? 'active'
+                        : '' %>"
+                >
+                    # Random
+                </a>
+
+            </div>
+
+
+            <!-- ONLINE USERS -->
+
+            <div class="online-section">
+
+                <h4>
+                    ONLINE USERS
+                </h4>
+
+                <ul id="onlineUsers"></ul>
+
+            </div>
 
         </div>
 
-      <% }) %>
 
-    </div>
+        <!-- LOGOUT -->
+
+        <a
+            href="/logout"
+            class="logout-btn"
+        >
+            Logout
+        </a>
+
+    </aside>
 
 
-    <div
-      id="typingIndicator"
-      class="typing-indicator"
-    ></div>
+    <!-- ================= MAIN CHAT ================= -->
+
+    <main class="chat-container">
 
 
-    <form
-      id="messageForm"
-      class="message-form"
-    >
+        <!-- CHAT HEADER -->
 
-      <input
-        type="text"
-        id="messageInput"
-        placeholder="Message #<%= room %>"
-        autocomplete="off"
-      >
+        <header class="chat-header">
 
-      <button type="submit">
-        Send ➤
-      </button>
+            <div>
 
-    </form>
+                <% if (privateChat) { %>
 
-  </main>
+                    <h2>
+                        💬 <%= targetUser.username %>
+                    </h2>
+
+                    <p id="targetUserStatus">
+                        Checking status...
+                    </p>
+
+                <% } else { %>
+
+                    <h2>
+                        # <%= room %>
+                    </h2>
+
+                    <p>
+                        Real-time conversation
+                    </p>
+
+                <% } %>
+
+            </div>
+
+
+            <!-- MESSAGE SEARCH -->
+
+            <div class="message-search">
+
+                <input
+                    type="text"
+                    id="messageSearchInput"
+                    placeholder="🔎 Search messages..."
+                    autocomplete="off"
+                >
+
+                <button
+                    type="button"
+                    id="clearMessageSearch"
+                    title="Clear search"
+                >
+                    ✕
+                </button>
+
+                <span id="searchResultCount"></span>
+
+            </div>
+
+
+            <!-- CONNECTION -->
+
+            <div class="connection-status">
+                ● Live
+            </div>
+
+        </header>
+
+
+        <!-- MESSAGES -->
+
+        <div
+            class="messages"
+            id="messages"
+        >
+
+            <% messages.forEach(msg => { %>
+
+                <div
+                    class="message <%= msg.username === user.username
+                        ? 'my-message'
+                        : 'other-message' %>"
+
+                    data-message-date="<%= msg.createdAt %>"
+                    data-message-id="<%= msg._id %>"
+                >
+
+                    <!-- AVATAR -->
+
+                    <div class="message-avatar">
+
+                        <%= msg.username
+                            .charAt(0)
+                            .toUpperCase()
+                        %>
+
+                    </div>
+
+
+                    <!-- MESSAGE CONTENT -->
+
+                    <div class="message-content">
+
+                        <div class="message-bubble">
+
+                            <!-- MESSAGE INFO -->
+
+                            <div class="message-info">
+
+                                <% if (
+                                    msg.username !== user.username
+                                ) { %>
+
+                                    <strong>
+                                        <%= msg.username %>
+                                    </strong>
+
+                                <% } %>
+
+
+                                <span class="message-time">
+
+                                    <%= new Date(
+                                        msg.createdAt
+                                    ).toLocaleTimeString(
+                                        [],
+                                        {
+                                            hour: "2-digit",
+                                            minute: "2-digit"
+                                        }
+                                    ) %>
+
+                                </span>
+
+
+                                <!-- PRIVATE CHAT STATUS -->
+
+                                <% if (
+                                    privateChat &&
+                                    msg.username === user.username
+                                ) { %>
+
+                                    <span
+                                        class="message-status <%= msg.seen
+                                            ? 'seen'
+                                            : '' %>"
+
+                                        data-status-for="<%= msg._id %>"
+                                    >
+
+                                        <% if (msg.seen) { %>
+
+                                            ✓✓
+
+                                        <% } else if (
+                                            msg.delivered
+                                        ) { %>
+
+                                            ✓✓
+
+                                        <% } else { %>
+
+                                            ✓
+
+                                        <% } %>
+
+                                    </span>
+
+                                <% } %>
+
+                            </div>
+
+
+                            <!-- MESSAGE TEXT -->
+
+                            <p
+                                data-original-text="<%= msg.message %>"
+                            >
+                                <%= msg.message %>
+                            </p>
+
+                        </div>
+
+
+                        <!-- THREE DOT MENU -->
+
+                        <% if (
+                            msg.username === user.username
+                        ) { %>
+
+                            <div class="message-menu-wrapper">
+
+                                <button
+                                    type="button"
+                                    class="message-menu-btn"
+                                    data-message-id="<%= msg._id %>"
+                                    title="More options"
+                                >
+                                    ⋮
+                                </button>
+
+
+                                <div
+                                    class="message-menu"
+                                    data-menu-for="<%= msg._id %>"
+                                >
+
+                                    <!-- REPLY -->
+
+                                    <button
+                                        type="button"
+                                        class="reply-message-btn"
+                                        data-message-id="<%= msg._id %>"
+                                    >
+                                        ↩️ Reply
+                                    </button>
+
+
+                                    <!-- COPY -->
+
+                                    <button
+                                        type="button"
+                                        class="copy-message-btn"
+                                        data-message-id="<%= msg._id %>"
+                                    >
+                                        📋 Copy
+                                    </button>
+
+
+                                    <!-- EDIT -->
+
+                                    <button
+                                        type="button"
+                                        class="edit-message-btn"
+                                        data-message-id="<%= msg._id %>"
+                                    >
+                                        ✏️ Edit
+                                    </button>
+
+
+                                    <!-- DELETE -->
+
+                                    <button
+                                        type="button"
+                                        class="delete-message-btn"
+                                        data-message-id="<%= msg._id %>"
+                                    >
+                                        🗑️ Delete
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        <% } %>
+
+
+                        <!-- REACTIONS -->
+
+                        <div class="message-reactions">
+
+                            <button
+                                type="button"
+                                class="reaction-btn"
+                                data-message-id="<%= msg._id %>"
+                                data-reaction="❤️"
+                                title="Love"
+                            >
+                                ❤️
+                            </button>
+
+                            <button
+                                type="button"
+                                class="reaction-btn"
+                                data-message-id="<%= msg._id %>"
+                                data-reaction="👍"
+                                title="Like"
+                            >
+                                👍
+                            </button>
+
+                            <button
+                                type="button"
+                                class="reaction-btn"
+                                data-message-id="<%= msg._id %>"
+                                data-reaction="😂"
+                                title="Laugh"
+                            >
+                                😂
+                            </button>
+
+                            <button
+                                type="button"
+                                class="reaction-btn"
+                                data-message-id="<%= msg._id %>"
+                                data-reaction="😮"
+                                title="Surprised"
+                            >
+                                😮
+                            </button>
+
+                            <button
+                                type="button"
+                                class="reaction-btn"
+                                data-message-id="<%= msg._id %>"
+                                data-reaction="😢"
+                                title="Sad"
+                            >
+                                😢
+                            </button>
+
+                            <button
+                                type="button"
+                                class="reaction-btn"
+                                data-message-id="<%= msg._id %>"
+                                data-reaction="🔥"
+                                title="Fire"
+                            >
+                                🔥
+                            </button>
+
+                        </div>
+
+
+                        <!-- REACTION RESULTS -->
+
+                        <div
+                            class="reaction-results"
+                            data-reactions-for="<%= msg._id %>"
+                        >
+
+                            <% if (
+                                msg.reactions &&
+                                msg.reactions.length > 0
+                            ) { %>
+
+                                <% msg.reactions.forEach(
+                                    reaction => {
+                                %>
+
+                                    <span class="reaction-result">
+                                        <%= reaction.emoji %>
+                                    </span>
+
+                                <% }) %>
+
+                            <% } %>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            <% }) %>
+
+        </div>
+
+
+        <!-- TYPING INDICATOR -->
+
+        <div
+            id="typingIndicator"
+            class="typing-indicator"
+        ></div>
+
+
+        <!-- REPLY PREVIEW -->
+
+        <div
+            id="replyPreview"
+            class="reply-preview"
+            style="display: none;"
+        >
+
+            <div>
+
+                <strong>
+                    Replying to
+                </strong>
+
+                <span id="replyPreviewText"></span>
+
+            </div>
+
+            <button
+                type="button"
+                id="cancelReply"
+                title="Cancel reply"
+            >
+                ✕
+            </button>
+
+        </div>
+
+
+        <!-- MESSAGE FORM -->
+
+        <form
+            id="messageForm"
+            class="message-form"
+        >
+
+            <input
+                type="text"
+                id="messageInput"
+
+                placeholder="<%= privateChat
+                    ? 'Message ' + targetUser.username
+                    : 'Message #' + room
+                %>"
+
+                autocomplete="off"
+            >
+
+            <button type="submit">
+                Send ➤
+            </button>
+
+        </form>
+
+    </main>
 
 </div>
 
 
-<script>
-
-  const CURRENT_USER =
-    <%- JSON.stringify(user.username) %>;
-
-  const CURRENT_ROOM =
-    <%- JSON.stringify(room) %>;
-
-</script>
+<!-- SOCKET.IO -->
 
 <script src="/socket.io/socket.io.js"></script>
 
+
+<!-- CHAT JAVASCRIPT -->
+
 <script src="/js/chat.js"></script>
 
+
 </body>
+
 </html>
